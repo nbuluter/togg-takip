@@ -24,10 +24,10 @@ st.caption("35 CTT 500 | Kapadokya Togg T10X")
 try:
     st.image("araba.jpeg", use_container_width=True)
 except:
-    st.info("ℹ️ Araba görseli 'araba.jpeg' adıyla GitHub'da hazır.")
+    pass
 
 # --- HAFIZA (VERİTABANI) AYARLARI ---
-conn = sqlite3.connect('togg_sarj_kesin_v2.db', check_same_thread=False)
+conn = sqlite3.connect('togg_sarj_nihai.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS sarj_kayitlari
              (id INTEGER PRIMARY KEY AUTOINCREMENT, tarih TEXT, sarj_tipi TEXT, firma TEXT, 
@@ -35,57 +35,64 @@ c.execute('''CREATE TABLE IF NOT EXISTS sarj_kayitlari
               baslangic_yuzde INTEGER, guncel_km INTEGER, kw REAL, tutar REAL)''')
 conn.commit()
 
-# --- SOL MENÜ: DOĞRUDAN DOSYA YÜKLEME ---
-st.sidebar.markdown("### 📥 İlk Kurulum (Garantili Yöntem)")
-uploaded_file = st.sidebar.file_uploader("İndirdiğiniz 'SARJ.csv' dosyasını buraya bırakın", type=["csv"])
+# --- SOL MENÜ: DOSYA YÜKLEME KUTUSUNU ÇEKMECEYE SAKLADIK ---
+st.sidebar.markdown("### ⚙️ Ayarlar")
+with st.sidebar.expander("📥 İlk Kurulum (Dosya Yükle)", expanded=False):
+    st.write("Eski verileri yüklemek için kutuyu kullanabilirsiniz. İşiniz bittiğinde bu çekmece otomatik kapanır.")
+    uploaded_file = st.file_uploader("İndirdiğiniz 'SARJ.csv' dosyasını buraya bırakın", type=["csv"])
 
-if uploaded_file is not None:
-    try:
-        eski_veri = pd.read_csv(uploaded_file)
-        c.execute("DELETE FROM sarj_kayitlari") # Mükerrer olmaması için temizliyoruz
-        
-        for index, row in eski_veri.iterrows():
-            try:
-                # Sütun isimlerine göre özel veri çekme
-                st_tarih = str(row['TARİH']) if 'TARİH' in eski_veri.columns and pd.notnull(row['TARİH']) else "Bilinmiyor"
-                s_tipi = str(row['ŞARJ TİPİ']) if 'ŞARJ TİPİ' in eski_veri.columns and pd.notnull(row['ŞARJ TİPİ']) else "AC"
-                sfirma = str(row['ALINAN ŞARJ FİRMASI']) if 'ALINAN ŞARJ FİRMASI' in eski_veri.columns and pd.notnull(row['ALINAN ŞARJ FİRMASI']) else "Bilinmiyor"
-                
-                # KW değerini bulma ve virgülden noktaya çevirme
-                skw_str = str(row['FATURADA ALINAN KW']) if 'FATURADA ALINAN KW' in eski_veri.columns and pd.notnull(row['FATURADA ALINAN KW']) else ""
-                if skw_str.strip() == "":
-                    skw_str = str(row['ALINAN KW (%1=0,885 kW)']) if 'ALINAN KW (%1=0,885 kW)' in eski_veri.columns and pd.notnull(row['ALINAN KW (%1=0,885 kW)']) else "0"
-                
-                skw = float(skw_str.replace('.', '').replace(',', '.')) if skw_str != "nan" else 0.0
-                
-                # Ödenen Ücreti ayarlama (ÜCRET YOK ibaresini anlama)
-                stutar_str = str(row['ÖDENEN ÜCRET']) if 'ÖDENEN ÜCRET' in eski_veri.columns and pd.notnull(row['ÖDENEN ÜCRET']) else "0"
-                if "YOK" in stutar_str.upper() or "BEDAVA" in stutar_str.upper():
-                    stutar = 0.0
-                    ucret_tipi = "Ücretsiz"
-                else:
-                    stutar = float(stutar_str.replace('.', '').replace(',', '.')) if stutar_str != "nan" else 0.0
-                    ucret_tipi = "Ücretli"
+    if uploaded_file is not None:
+        try:
+            eski_veri = pd.read_csv(uploaded_file)
+            eski_veri.columns = eski_veri.columns.str.strip().str.replace('\ufeff', '').str.replace('ï»¿', '').str.upper()
+            c.execute("DELETE FROM sarj_kayitlari")
+            
+            def guvenli_oku(satir, aranan_isimler, varsayilan=""):
+                for isim in aranan_isimler:
+                    if isim in eski_veri.columns:
+                        deger = satir[isim]
+                        if pd.notnull(deger):
+                            return str(deger).strip()
+                return varsayilan
 
-                # Kilometreyi ayarlama (1.000 gibi değerleri düzeltme)
-                skm_str = str(row['ARAÇ KM']) if 'ARAÇ KM' in eski_veri.columns and pd.notnull(row['ARAÇ KM']) else "0"
-                skm = int(float(skm_str.replace('.', '').replace(',', ''))) if skm_str != "nan" and skm_str.strip() != "" else 0
+            for index, row in eski_veri.iterrows():
+                try:
+                    st_tarih = guvenli_oku(row, ['TARİH', 'TARIH'], date.today().strftime("%d.%m.%Y"))
+                    st_tarih = st_tarih.replace('/', '.').replace('-', '.') # Eğik çizgileri noktaya çevirir
+                    
+                    s_tipi = guvenli_oku(row, ['ŞARJ TİPİ', 'SARJ TIPI', 'ŞARJ TIPI', 'SARJ TİPİ'], "AC")
+                    sfirma = guvenli_oku(row, ['ALINAN ŞARJ FİRMASI', 'ALINAN SARJ FIRMASI', 'FİRMA'], "Bilinmiyor")
+                    
+                    skw_str = guvenli_oku(row, ['FATURADA ALINAN KW', 'ALINAN KW (%1=0,885 KW)', 'ALINAN KW'], "0")
+                    skw = float(skw_str.replace('.', '').replace(',', '.')) if skw_str.lower() != "nan" and skw_str != "" else 0.0
+                    
+                    stutar_str = guvenli_oku(row, ['ÖDENEN ÜCRET', 'ODENEN UCRET', 'TUTAR'], "0")
+                    if "YOK" in stutar_str.upper() or "BEDAVA" in stutar_str.upper():
+                        stutar = 0.0
+                        ucret_tipi = "Ücretsiz"
+                    else:
+                        stutar = float(stutar_str.replace('.', '').replace(',', '.')) if stutar_str.lower() != "nan" and stutar_str != "" else 0.0
+                        ucret_tipi = "Ücretli"
 
-                c.execute("INSERT INTO sarj_kayitlari (tarih, sarj_tipi, firma, ucret_tipi, baslama_saati, bitis_saati, fark_saati, baslangic_yuzde, guncel_km, kw, tutar) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                          (st_tarih, s_tipi, sfirma, ucret_tipi, "00:00", "01:00", "1 saat", 20, skm, skw, stutar))
-            except:
-                continue # Hatalı satırları atla
-                
-        conn.commit()
-        st.sidebar.success("✅ Harika! Tüm detaylı verileriniz başarıyla okundu ve yüklendi.")
-    except Exception as e:
-        st.sidebar.error("Dosya okunurken bir hata oluştu. Lütfen dosyanın içeriğini kontrol edin.")
+                    skm_str = guvenli_oku(row, ['ARAÇ KM', 'ARAC KM', 'KM'], "0")
+                    skm = int(float(skm_str.replace('.', '').replace(',', ''))) if skm_str.lower() != "nan" and skm_str != "" else 0
+
+                    c.execute("INSERT INTO sarj_kayitlari (tarih, sarj_tipi, firma, ucret_tipi, baslama_saati, bitis_saati, fark_saati, baslangic_yuzde, guncel_km, kw, tutar) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                              (st_tarih, s_tipi, sfirma, ucret_tipi, "00:00", "01:00", "1 saat", 20, skm, skw, stutar))
+                except:
+                    continue
+                    
+            conn.commit()
+            st.success("✅ Veriler başarıyla alındı!")
+        except Exception as e:
+            st.error(f"Hata: {str(e)}")
 
 st.sidebar.divider()
 st.sidebar.header("🔌 Yeni Şarj Ekle")
 
+# --- TARİH FORMATI GÜN.AY.YIL OLARAK AYARLANDI ---
 with st.sidebar.form("yeni_kayit_formu"):
-    f_tarih = st.date_input("Tarih", date.today())
+    f_tarih = st.date_input("Tarih", date.today(), format="DD.MM.YYYY")
     f_sarj_tipi = st.selectbox("Şarj Tipi", ["AC", "DC", "AC-Acil Osgb", "Hediye Şarj"])
     f_firma = st.text_input("Firma Adı")
     f_ucret_tipi = st.selectbox("Ücret Tipi", ["Ücretli", "Ücretsiz"])
@@ -110,18 +117,17 @@ with st.sidebar.form("yeni_kayit_formu"):
         fark_saat_metni = f"{toplam_dakika // 60} saat {toplam_dakika % 60} dk"
         
         c.execute("INSERT INTO sarj_kayitlari (tarih, sarj_tipi, firma, ucret_tipi, baslama_saati, bitis_saati, fark_saati, baslangic_yuzde, guncel_km, kw, tutar) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                  (f_tarih.strftime("%d/%m/%Y"), f_sarj_tipi, f_firma, f_ucret_tipi, str(f_baslama)[:5], str(f_bitis)[:5], fark_saat_metni, f_baslangic_yuzde, f_km, f_kw, f_tutar))
+                  (f_tarih.strftime("%d.%m.%Y"), f_sarj_tipi, f_firma, f_ucret_tipi, str(f_baslama)[:5], str(f_bitis)[:5], fark_saat_metni, f_baslangic_yuzde, f_km, f_kw, f_tutar))
         conn.commit()
-        st.sidebar.success("🚀 Yeni şarj başarıyla kaydedildi! Sayfayı yenileyin.")
+        st.sidebar.success("🚀 Yeni şarj kaydedildi!")
 
-# --- 3. VERİLERİ İŞLEME VE GÖSTERME ---
+# --- VERİLERİ İŞLEME VE GÖSTERME ---
 df = pd.read_sql_query("SELECT * FROM sarj_kayitlari", conn)
 
 if not df.empty:
     toplam_kw = df['kw'].sum()
     toplam_tutar = df['tutar'].sum()
     
-    # Performans hesabı
     km_verileri = df[df['guncel_km'] > 0]['guncel_km']
     ort_km_tl = toplam_tutar / (km_verileri.max() - km_verileri.min()) if len(km_verileri) >= 2 and (km_verileri.max() - km_verileri.min()) > 0 else 0.0
 
@@ -144,4 +150,4 @@ if not df.empty:
     csv_data = df.to_csv(index=False).encode('utf-8')
     st.download_button(label="📥 Tüm Verileri Telefona CSV Olarak İndir", data=csv_data, file_name="togg_sarj_verileri.csv", mime="text/csv")
 else:
-    st.info("ℹ️ Uygulama şu an boş. Sol taraftaki kutuya indirdiğiniz 'SARJ.csv' dosyasını yükleyin.")
+    st.info("ℹ️ Uygulama şu an boş. Sol menüdeki 'İlk Kurulum' çekmecesini açıp 'SARJ.csv' dosyasını yükleyin.")
