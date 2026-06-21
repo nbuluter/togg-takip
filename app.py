@@ -32,9 +32,9 @@ st.title("⚡ Togg Şarj Takibi | 35 CTT 500")
 
 # --- ANA EKRAN GÖRSELİ ---
 try:
-    st.image("araba.jpg", use_container_width=True)
+    st.image("araba.jpeg", use_container_width=True)
 except:
-    st.info("Araba görseli 'araba.jpg' olarak klasöre eklenmelidir.")
+    st.info("Araba görseli 'araba.jpeg' olarak klasöre eklenmelidir.")
 
 # --- YENİ KAYIT FORMU ---
 with st.sidebar.expander("🔌 Yeni Şarj Ekle", expanded=False):
