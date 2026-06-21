@@ -210,7 +210,9 @@ def load_data():
     for c in num_cols:
         if c in df.columns:
             df[c] = pd.to_numeric(
-                df[c].astype(str).str.replace(',', '.').str.strip(),
+                df[c].astype(str).str.strip()
+                     .str.replace(r'\.(?=\d{3}(?:[,.]|\s*$))', '', regex=True)
+                     .str.replace(',', '.', regex=False),
                 errors='coerce'
             )
     return df
@@ -222,7 +224,11 @@ def save_row(row_dict):
 
 def to_num(val, default=0.0):
     try:
-        return float(str(val).replace(',', '.'))
+        import re
+        s = str(val).strip()
+        s = re.sub(r'\.(?=\d{3}(?:[,.]|\s*$))', '', s)
+        s = s.replace(',', '.')
+        return float(s)
     except Exception:
         return default
 
@@ -251,7 +257,7 @@ def compute_stats(df):
     s['dc_tutar'] = t_sum(dc)
     s['ac_tutar'] = t_sum(ac)
     try:
-        s['son_km'] = to_num(df['ARAC KM'].dropna().iloc[-1])
+        s['son_km'] = float(df['ARAC KM'].dropna().iloc[-1])
     except Exception:
         s['son_km'] = 0
     s['ort_km_tl'] = s['son_km'] / s['toplam_tutar'] if s['toplam_tutar'] > 0 else 0
@@ -308,7 +314,7 @@ with tab1:
 
         st.markdown("### ⚡ GENEL")
         c1, c2 = st.columns(2)
-        c1.metric("TOPLAM kWh",     f"{stats['toplam_kw']:,.2f}")
+        c1.metric("TOPLAM kW",      f"{stats['toplam_kw']:,.2f}")
         c2.metric("TOPLAM TUTAR",   f"{stats['toplam_tutar']:,.2f} ₺")
         c1, c2 = st.columns(2)
         c1.metric("SON KM",         f"{stats['son_km']:,.0f} km")
@@ -316,13 +322,13 @@ with tab1:
 
         st.markdown("### 💳 kW DAGILIMI")
         c1, c2 = st.columns(2)
-        c1.metric("ÜCRETLİ kWh",   f"{stats['ucretli_kw']:,.2f}")
-        c2.metric("OSGB kWh",       f"{stats['osgb_kw']:,.2f}")
+        c1.metric("ÜCRETLİ kW",    f"{stats['ucretli_kw']:,.2f}")
+        c2.metric("OSGB kW",        f"{stats['osgb_kw']:,.2f}")
         c1, c2 = st.columns(2)
-        c1.metric("HEDİYE kWh",    f"{stats['hediye_kw']:,.2f}")
-        c2.metric("DC kWh",         f"{stats['dc_kw']:,.2f}")
+        c1.metric("HEDİYE kW",     f"{stats['hediye_kw']:,.2f}")
+        c2.metric("DC kW",          f"{stats['dc_kw']:,.2f}")
         c1, c2 = st.columns(2)
-        c1.metric("AC kWh",         f"{stats['ac_kw']:,.2f}")
+        c1.metric("AC kW",          f"{stats['ac_kw']:,.2f}")
 
         st.markdown("### 💰 TUTAR DAGILIMI")
         c1, c2 = st.columns(2)
