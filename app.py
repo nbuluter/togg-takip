@@ -370,8 +370,8 @@ with tab1:
 
         st.markdown("### ⏱️ SARJ SÜRELERİ")
         kart_row([
-            ("ÜC. DC (dk)",  f"{int(stats['sure_ucretli_dc']):,}",  "⚡", KAPAK),
-            ("ÜC. AC (dk)",  f"{int(stats['sure_ucretli_ac']):,}",  "🔌", KAPAK_D),
+            ("ÜCRETLİ DC (dk)",  f"{int(stats['sure_ucretli_dc']):,}",  "⚡", KAPAK),
+            ("ÜCRETLİ AC (dk)",  f"{int(stats['sure_ucretli_ac']):,}",  "🔌", KAPAK_D),
         ])
         kart_row([
             ("ÜCRETSİZ AC", f"{int(stats['sure_ucretsiz_ac']):,} dk", "🆓", KAPAK),
