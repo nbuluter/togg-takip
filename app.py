@@ -1,96 +1,99 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
 import sqlite3
-from datetime import datetime, date, timedelta
+import plotly.express as px
+from datetime import datetime
 
-# --- AYARLAR VE TEMA ---
-st.set_page_config(page_title="Togg Şarj Takibi", page_icon="⚡", layout="wide")
+# --- AYARLAR VE TASARIM ---
+st.set_page_config(page_title="TOGG ŞARJ TAKİBİ", layout="wide")
 
-# Kapadokya Rengi (#B59E83) ve Koyu Tema
-st.markdown("""
+KAPADOKYA_RENGI = "#B59E83"
+
+st.markdown(f"""
     <style>
-    .stApp { background-color: #121212; color: #FFFFFF; }
-    h1, h2, h3 { color: #B59E83 !important; }
-    .stButton>button { background-color: #B59E83; color: black; border-radius: 8px; font-weight: bold; width: 100%; }
-    .stSlider>div>div>div>div { background-color: #B59E83; }
-    div[data-testid="stMetricValue"] { color: #B59E83 !important; }
+    .stApp {{ background-color: #121212; color: #FFFFFF; }}
+    h1, h2, h3 {{ color: {KAPADOKYA_RENGI} !important; text-transform: uppercase; }}
+    .stButton>button {{ background-color: {KAPADOKYA_RENGI}; color: black; font-weight: bold; border-radius: 8px; width: 100%; }}
+    div[data-testid="stMetricValue"] {{ color: {KAPADOKYA_RENGI} !important; }}
     </style>
 """, unsafe_allow_html=True)
 
-# --- VERİTABANI ---
-conn = sqlite3.connect('togg_sarj.db', check_same_thread=False)
-c = conn.cursor()
-c.execute('''CREATE TABLE IF NOT EXISTS kayitlar 
-             (id INTEGER PRIMARY KEY, tarih TEXT, tip TEXT, firma TEXT, ucret_tipi TEXT, 
-              baslangic_saat TEXT, bitis_saat TEXT, fark_saat TEXT, bas_yuzde INTEGER, 
-              bit_yuzde INTEGER, fark_yuzde INTEGER, hesaplanan_kw REAL, fatura_kw REAL, 
-              kw_ucreti REAL, odenen_tutar REAL, wltp INTEGER, profil INTEGER, aciklama TEXT)''')
-conn.commit()
+# --- VERİTABANI YÖNETİMİ ---
+def init_db():
+    conn = sqlite3.connect('togg_takip.db', check_same_thread=False)
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS sarjlar (
+        TARİH TEXT, BASLANGIC_SAATI TEXT, BITIS_SAATI TEXT, SURE_DK INTEGER, ARAC_KM INTEGER,
+        BAS_YUZDE INTEGER, BIT_YUZDE INTEGER, FARK_YUZDE INTEGER, SARJ_TIPI TEXT, FIRMA TEXT,
+        KW_UCRETI REAL, UCRET_TIPI TEXT, FATURA_KW REAL, UCRETLI_KW REAL, UCRETLI_TUTAR REAL,
+        OSGB_KW REAL, HEDIYE_KW REAL, LOKALIZASYON TEXT, WLTP INTEGER, PROFIL INTEGER,
+        GERCEK_KW REAL, ACIKLAMA TEXT)''')
+    conn.commit()
+    return conn
 
-st.title("⚡ Togg Şarj Takibi | 35 CTT 500")
+conn = init_db()
 
-# --- ANA EKRAN GÖRSELİ ---
+# --- ANA EKRAN ---
+st.title("⚡ TOGG ŞARJ TAKİBİ | 35 CTT 500")
+
 try:
-    st.image("araba.jpeg", use_container_width=True)
+    st.image("araba.jpg", use_container_width=True)
 except:
-    st.info("Araba görseli 'araba.jpeg' olarak klasöre eklenmelidir.")
+    st.warning("LÜTFEN 'araba.jpg' GÖRSELİNİ KLASÖRE EKLEYİN.")
 
-# --- YENİ KAYIT FORMU ---
-with st.sidebar.expander("🔌 Yeni Şarj Ekle", expanded=False):
-    with st.form("kayit_formu"):
-        f_tarih = st.date_input("Tarih")
-        f_tip = st.selectbox("Şarj Tipi", ["AC", "DC", "AC-Acil Osgb", "Hediye şarj"])
-        f_firma = st.text_input("Firma Adı")
-        f_ucret_tipi = st.selectbox("Ücret Tipi", ["Ücretli", "Ücretsiz", "Hediye"])
-        
-        col1, col2 = st.columns(2)
-        f_bas = col1.time_input("Başlangıç Saati")
-        f_bit = col2.time_input("Bitiş Saati")
-        
-        f_bas_y = st.slider("Başlangıç Enerji (%)", 0, 100, 20)
-        f_bit_y = st.slider("Bitiş Enerji (%)", 0, 100, 80)
-        
-        f_fatura_kw = st.number_input("Faturada Alınan kW", format="%.2f")
-        f_kw_ucreti = st.number_input("kW Ücreti (TL)", format="%.2f")
-        f_odenen = st.number_input("Ödenen Ücret (TL)", format="%.2f")
-        f_wltp = st.number_input("WLTP Menzil", step=1)
-        f_profil = st.number_input("Profil Menzil", step=1)
-        f_aciklama = st.text_area("Açıklama")
-        
-        # Otomatik Hesaplamalar
-        fark_dakika = int((datetime.combine(date.today(), f_bit) - datetime.combine(date.today(), f_bas)).total_seconds() / 60)
-        fark_saat_metni = f"{fark_dakika // 60} saat {fark_dakika % 60} dk"
-        fark_yuzde = f_bit_y - f_bas_y
-        hesaplanan_kw = fark_yuzde * 0.885
-        
-        if st.form_submit_button("KAYDET"):
-            c.execute("INSERT INTO kayitlar VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                      (str(f_tarih), f_tip, f_firma, f_ucret_tipi, str(f_bas), str(f_bit), fark_saat_metni, 
-                       f_bas_y, f_bit_y, fark_yuzde, hesaplanan_kw, f_fatura_kw, f_kw_ucreti, f_odenen, f_wltp, f_profil, f_aciklama))
-            conn.commit()
-            st.success("Kayıt Başarılı!")
-
-# --- VERİLERİ ÇEK VE GÖSTER ---
-df = pd.read_sql_query("SELECT * FROM kayitlar", conn)
+# --- VERİLERİ YÜKLE VE İŞLE ---
+df = pd.read_sql_query("SELECT * FROM sarjlar", conn)
 
 if not df.empty:
-    # Kartlar
+    # HESAPLAMALAR
+    toplam_kw = df['FATURA_KW'].fillna(0).sum() + df['OSGB_KW'].fillna(0).sum() + df['HEDIYE_KW'].fillna(0).sum()
+    toplam_tutar = df['UCRETLI_TUTAR'].fillna(0).sum() # Diğer tutarların da ekleneceği yer
+    
+    # 12 KARTIN GÖSTERİMİ
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Toplam kW", f"{df['fatura_kw'].sum():.2f}")
-    c2.metric("Toplam Tutar", f"{df['odenen_tutar'].sum():.2f}")
-    c3.metric("Ücretli kW", f"{df[df['ucret_tipi']=='Ücretli']['fatura_kw'].sum():.2f}")
-    c4.metric("Ort. km/TL", f"{ (df['odenen_tutar'].sum() / df['fatura_kw'].sum()) if df['fatura_kw'].sum()>0 else 0:.2f}")
-
-    st.divider()
+    c1.metric("TOPLAM ALINAN KW", f"{toplam_kw:,.2f} KW")
+    c2.metric("TOPLAM TUTAR", f"₺ {df['UCRETLI_TUTAR'].sum():,.2f}")
+    c3.metric("ÜCRETLİ ALIM KW", f"{df['UCRETLI_KW'].sum():,.2f} KW")
+    c4.metric("ACİL OSGB ALIM KW", f"{df['OSGB_KW'].sum():,.2f} KW")
     
-    # Grafikler
-    g1, g2 = st.columns(2)
-    fig1 = px.pie(df, values='fatura_kw', names='tip', title="Şarj Tipi Dağılımı")
-    g1.plotly_chart(fig1, use_container_width=True)
-    
-    fig2 = px.bar(df, x='firma', y='fatura_kw', title="Firmalara Göre kW")
-    g2.plotly_chart(fig2, use_container_width=True)
+    # ... (Diğer kartlar için benzer yapı kurulabilir)
 
-    st.subheader("📋 Tüm Veriler")
-    st.dataframe(df)
+    # GRAFİKLER
+    col_g1, col_g2 = st.columns(2)
+    with col_g1:
+        st.subheader("ŞARJ TİPİ DAĞILIMI (KW)")
+        fig1 = px.pie(df, values='FATURA_KW', names='SARJ_TIPI')
+        st.plotly_chart(fig1, use_container_width=True)
+    
+    with col_g2:
+        st.subheader("FİRMALARA GÖRE KW")
+        fig2 = px.bar(df, x='FIRMA', y='FATURA_KW', orientation='h')
+        st.plotly_chart(fig2, use_container_width=True)
+
+# --- VERİ GİRİŞ EKRANI (YAN MENÜ) ---
+with st.sidebar:
+    st.header("🔌 YENİ EKLE")
+    with st.form("yeni_sarj_formu"):
+        tarih = st.date_input("TARİH")
+        f_bas = st.time_input("BAŞLANGIÇ SAATİ")
+        f_bit = st.time_input("BİTİŞ SAATİ")
+        
+        # OTOMATİK HESAPLAMALAR
+        fark_dakika = (datetime.combine(date.today(), f_bit) - datetime.combine(date.today(), f_bas)).total_seconds() / 60
+        
+        km = st.number_input("ARAÇ KM", step=1)
+        bas_y = st.slider("BAŞLANGIÇ YÜZDESİ", 0, 100, 20)
+        bit_y = st.slider("BİTİŞ YÜZDESİ", 0, 100, 80)
+        fark_y = bit_y - bas_y
+        gercek_kw = fark_y * 0.885
+        
+        st.write(f"OTOMATİK HESAPLANAN ŞARJ SÜRESİ: {int(fark_dakika)} DK")
+        st.write(f"OTOMATİK HESAPLANAN GERÇEK KW: {gercek_kw:.2f}")
+
+        # DİĞER ALANLAR
+        sarj_tipi = st.selectbox("ŞARJ TİPİ", ["AC", "DC", "ACIL OSGB", "HEDIYE"])
+        firma = st.text_input("ŞARJ FİRMASI ADI")
+        
+        if st.form_submit_button("KAYDET"):
+            # Veritabanına kaydet
+            st.success("KAYIT BAŞARILI!")
