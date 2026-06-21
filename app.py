@@ -37,9 +37,9 @@ conn = init_db()
 st.title("⚡ TOGG ŞARJ TAKİBİ | 35 CTT 500")
 
 try:
-    st.image("araba.jpg", use_container_width=True)
+    st.image("araba.jpeg", use_container_width=True)
 except:
-    st.warning("LÜTFEN 'araba.jpg' GÖRSELİNİ KLASÖRE EKLEYİN.")
+    st.warning("LÜTFEN 'araba.jpeg' GÖRSELİNİ KLASÖRE EKLEYİN.")
 
 # --- VERİLERİ YÜKLE VE İŞLE ---
 df = pd.read_sql_query("SELECT * FROM sarjlar", conn)
