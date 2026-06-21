@@ -33,16 +33,13 @@ st.markdown(f"""
   }}
   .stApp {{ background-color: {DARK_BG} !important; }}
 
-  /* Mobil padding azalt */
   .block-container {{
     padding: 0.5rem 0.8rem 2rem 0.8rem !important;
     max-width: 520px !important;
   }}
 
-  /* Sidebar gizle */
   [data-testid="stSidebar"] {{ display: none !important; }}
 
-  /* Sekmeler - mobil dokunma boyutu */
   .stTabs [data-baseweb="tab-list"] {{
     gap: 3px;
     background: {CARD_BG};
@@ -64,7 +61,6 @@ st.markdown(f"""
     color: #000 !important;
   }}
 
-  /* Metrik kartlar */
   [data-testid="metric-container"] {{
     background: {CARD_BG} !important;
     border: 1px solid #2A2A2A !important;
@@ -85,7 +81,6 @@ st.markdown(f"""
     color: {KAPAK} !important;
   }}
 
-  /* Input alanlar - mobil için büyük */
   .stTextInput input,
   .stNumberInput input,
   .stTimeInput input {{
@@ -113,7 +108,6 @@ st.markdown(f"""
     font-size: 15px !important;
   }}
 
-  /* Label'lar */
   .stTextInput label, .stNumberInput label,
   .stSelectbox label, .stSlider label,
   .stTimeInput label, .stDateInput label,
@@ -126,14 +120,12 @@ st.markdown(f"""
     margin-bottom: 4px !important;
   }}
 
-  /* Slider */
   .stSlider [data-baseweb="slider"] div[role="slider"] {{
     background-color: {KAPAK} !important;
     width: 24px !important;
     height: 24px !important;
   }}
 
-  /* Butonlar - büyük dokunma alanı */
   .stButton > button, .stFormSubmitButton > button {{
     background-color: {KAPAK} !important;
     color: #000 !important;
@@ -157,33 +149,27 @@ st.markdown(f"""
     width: 100% !important;
   }}
 
-  /* Divider */
   hr {{ border-color: #2A2A2A !important; margin: 8px 0 !important; }}
 
-  /* Başlıklar */
   h1 {{ font-size: 24px !important; color: {TEXT} !important; margin: 0 !important; }}
   h2 {{ font-size: 18px !important; color: {TEXT} !important; margin: 8px 0 4px 0 !important; }}
   h3 {{ font-size: 15px !important; color: {KAPAK} !important;
         letter-spacing: 1px !important; margin: 12px 0 6px 0 !important; }}
 
-  /* Info/success mesajları */
   .stAlert {{
     border-radius: 12px !important;
     font-size: 14px !important;
   }}
 
-  /* DataTable */
   .stDataFrame {{
     border-radius: 12px !important;
     overflow: hidden !important;
     font-size: 12px !important;
   }}
 
-  /* Scrollbar */
   ::-webkit-scrollbar {{ width: 4px; }}
   ::-webkit-scrollbar-thumb {{ background: {KAPAK}; border-radius: 2px; }}
 
-  /* Date input */
   .stDateInput input {{
     background-color: {CARD2} !important;
     color: {TEXT} !important;
@@ -193,7 +179,6 @@ st.markdown(f"""
     min-height: 48px !important;
   }}
 
-  /* Plotly chart arka plan */
   .js-plotly-plot {{ border-radius: 12px !important; }}
 </style>
 """, unsafe_allow_html=True)
@@ -281,13 +266,16 @@ def compute_stats(df):
     return s
 
 # ============================================================
-# VERİYİ YÜKLEèö
+# VERİYİ YÜKLE
 # ============================================================
 df = load_data()
 
 # ============================================================
-# HEADER
+# HEADER — araba görseli + başlık
 # ============================================================
+if os.path.exists("araba.jpeg"):
+    st.image("araba.jpeg", use_container_width=True)
+
 st.markdown(f"""
 <div style="display:flex;align-items:center;gap:12px;padding:8px 0 12px 0;
             border-bottom:1px solid #2A2A2A;margin-bottom:12px;">
@@ -318,42 +306,41 @@ with tab1:
     else:
         stats = compute_stats(df)
 
-        # ---- GENEL KARTLAR (2 kolon — mobilde iyi görünür) ----
         st.markdown("### ⚡ GENEL")
         c1, c2 = st.columns(2)
-        c1.metric("TOPLAM kWh",     f"{stats['toplam_kw']:.2f}")
-        c2.metric("TOPLAM TUTAR",   f"{stats['toplam_tutar']:.2f} ₺")
+        c1.metric("TOPLAM kWh",     f"{stats['toplam_kw']:,.2f}")
+        c2.metric("TOPLAM TUTAR",   f"{stats['toplam_tutar']:,.2f} ₺")
         c1, c2 = st.columns(2)
         c1.metric("SON KM",         f"{stats['son_km']:,.0f} km")
-        c2.metric("km / ₺",         f"{stats['ort_km_tl']:.2f}")
+        c2.metric("km / ₺",         f"{stats['ort_km_tl']:,.3f}")
 
         st.markdown("### 💳 kW DAGILIMI")
         c1, c2 = st.columns(2)
-        c1.metric("ÜCRETLİ kWh",   f"{stats['ucretli_kw']:.2f}")
-        c2.metric("OSGB kWh",       f"{stats['osgb_kw']:.2f}")
+        c1.metric("ÜCRETLİ kWh",   f"{stats['ucretli_kw']:,.2f}")
+        c2.metric("OSGB kWh",       f"{stats['osgb_kw']:,.2f}")
         c1, c2 = st.columns(2)
-        c1.metric("HEDİYE kWh",    f"{stats['hediye_kw']:.2f}")
-        c2.metric("DC kWh",         f"{stats['dc_kw']:.2f}")
+        c1.metric("HEDİYE kWh",    f"{stats['hediye_kw']:,.2f}")
+        c2.metric("DC kWh",         f"{stats['dc_kw']:,.2f}")
         c1, c2 = st.columns(2)
-        c1.metric("AC kWh",         f"{stats['ac_kw']:.2f}")
+        c1.metric("AC kWh",         f"{stats['ac_kw']:,.2f}")
 
         st.markdown("### 💰 TUTAR DAGILIMI")
         c1, c2 = st.columns(2)
-        c1.metric("ÜCRETLİ ₺",     f"{stats['ucretli_tutar']:.2f}")
-        c2.metric("OSGB ÖD.YOK ₺", f"{stats['osgb_tutar']:.2f}")
+        c1.metric("ÜCRETLİ ₺",     f"{stats['ucretli_tutar']:,.2f}")
+        c2.metric("OSGB ÖD.YOK ₺", f"{stats['osgb_tutar']:,.2f}")
         c1, c2 = st.columns(2)
-        c1.metric("HEDİYE ₺",      f"{stats['hediye_tutar']:.2f}")
-        c2.metric("DC TUTAR ₺",     f"{stats['dc_tutar']:.2f}")
+        c1.metric("HEDİYE ₺",      f"{stats['hediye_tutar']:,.2f}")
+        c2.metric("DC TUTAR ₺",     f"{stats['dc_tutar']:,.2f}")
         c1, c2 = st.columns(2)
-        c1.metric("AC TUTAR ₺",     f"{stats['ac_tutar']:.2f}")
+        c1.metric("AC TUTAR ₺",     f"{stats['ac_tutar']:,.2f}")
 
         st.markdown("### ⏱️ SARJ SÜRELERİ")
         c1, c2 = st.columns(2)
-        c1.metric("ÜC. DC (dk)",    f"{int(stats['sure_ucretli_dc'])}")
-        c2.metric("ÜC. AC (dk)",    f"{int(stats['sure_ucretli_ac'])}")
+        c1.metric("ÜC. DC (dk)",    f"{int(stats['sure_ucretli_dc']):,}")
+        c2.metric("ÜC. AC (dk)",    f"{int(stats['sure_ucretli_ac']):,}")
         c1, c2 = st.columns(2)
-        c1.metric("ÜCRETSİZ AC",   f"{int(stats['sure_ucretsiz_ac'])} dk")
-        c2.metric("HEDİYE DC",      f"{int(stats['sure_hediye_dc'])} dk")
+        c1.metric("ÜCRETSİZ AC",   f"{int(stats['sure_ucretsiz_ac']):,} dk")
+        c2.metric("HEDİYE DC",      f"{int(stats['sure_hediye_dc']):,} dk")
 
         st.divider()
 
@@ -365,7 +352,12 @@ with tab1:
             font_color=TEXT,
             title_font_color=KAPAK,
             title_font_size=13,
-            margin=dict(l=0, r=0, t=36, b=0),
+            margin=dict(l=0, r=80, t=36, b=0),
+        )
+        BAR_LAYOUT = dict(
+            **CHART_LAYOUT,
+            xaxis=dict(gridcolor='#2A2A2A', tickfont_size=10),
+            yaxis=dict(tickfont_size=10),
         )
 
         st.markdown("### 🥧 kWh PASTA")
@@ -375,7 +367,10 @@ with tab1:
         vkw2 = [v for v in vkw if v > 0]
         fig_p1 = px.pie(values=vkw2, names=lkw2,
                         color_discrete_sequence=PIE_COLORS, hole=0.4)
-        fig_p1.update_traces(textinfo='label+value', textfont_size=11)
+        fig_p1.update_traces(
+            texttemplate='%{label}<br>%{value:,.2f}',
+            textfont_size=11
+        )
         fig_p1.update_layout(**CHART_LAYOUT)
         st.plotly_chart(fig_p1, use_container_width=True)
 
@@ -386,7 +381,10 @@ with tab1:
         vt2 = [v for v in vt if v > 0]
         fig_p2 = px.pie(values=vt2, names=lt2,
                         color_discrete_sequence=PIE_COLORS, hole=0.4)
-        fig_p2.update_traces(textinfo='label+value', textfont_size=11)
+        fig_p2.update_traces(
+            texttemplate='%{label}<br>%{value:,.2f} ₺',
+            textfont_size=11
+        )
         fig_p2.update_layout(**CHART_LAYOUT)
         st.plotly_chart(fig_p2, use_container_width=True)
 
@@ -400,11 +398,13 @@ with tab1:
         fkw.columns = ['FİRMA', 'kWh']
         fig_b1 = px.bar(fkw, x='kWh', y='FİRMA', orientation='h',
                         text='kWh', color_discrete_sequence=[KAPAK])
-        fig_b1.update_traces(texttemplate='%{text:.1f}', textposition='outside',
-                             textfont_size=10)
-        fig_b1.update_layout(**CHART_LAYOUT,
-                             xaxis=dict(gridcolor='#2A2A2A', tickfont_size=10),
-                             yaxis=dict(tickfont_size=10))
+        fig_b1.update_traces(
+            texttemplate='%{text:,.1f}',
+            textposition='outside',
+            cliponaxis=False,
+            textfont_size=10
+        )
+        fig_b1.update_layout(**BAR_LAYOUT)
         st.plotly_chart(fig_b1, use_container_width=True)
 
         st.markdown("### 🏢 FİRMAYA GÖRE TUTAR (₺)")
@@ -416,11 +416,13 @@ with tab1:
         ft.columns = ['FİRMA', '₺']
         fig_b2 = px.bar(ft, x='₺', y='FİRMA', orientation='h',
                         text='₺', color_discrete_sequence=[KAPAK_D])
-        fig_b2.update_traces(texttemplate='%{text:.0f}₺', textposition='outside',
-                             textfont_size=10)
-        fig_b2.update_layout(**CHART_LAYOUT,
-                             xaxis=dict(gridcolor='#2A2A2A', tickfont_size=10),
-                             yaxis=dict(tickfont_size=10))
+        fig_b2.update_traces(
+            texttemplate='%{text:,.0f} ₺',
+            textposition='outside',
+            cliponaxis=False,
+            textfont_size=10
+        )
+        fig_b2.update_layout(**BAR_LAYOUT)
         st.plotly_chart(fig_b2, use_container_width=True)
 
         st.markdown("### 📅 AYLARA GÖRE kWh")
@@ -432,11 +434,13 @@ with tab1:
         aykw.columns = ['AY', 'kWh']
         fig_m1 = px.bar(aykw, x='kWh', y='AY', orientation='h',
                         text='kWh', color_discrete_sequence=[KAPAK])
-        fig_m1.update_traces(texttemplate='%{text:.1f}', textposition='outside',
-                             textfont_size=10)
-        fig_m1.update_layout(**CHART_LAYOUT,
-                             xaxis=dict(gridcolor='#2A2A2A', tickfont_size=10),
-                             yaxis=dict(tickfont_size=10))
+        fig_m1.update_traces(
+            texttemplate='%{text:,.1f}',
+            textposition='outside',
+            cliponaxis=False,
+            textfont_size=10
+        )
+        fig_m1.update_layout(**BAR_LAYOUT)
         st.plotly_chart(fig_m1, use_container_width=True)
 
         st.markdown("### 📅 AYLARA GÖRE TUTAR (₺)")
@@ -446,11 +450,13 @@ with tab1:
         ayt.columns = ['AY', '₺']
         fig_m2 = px.bar(ayt, x='₺', y='AY', orientation='h',
                         text='₺', color_discrete_sequence=[KAPAK_D])
-        fig_m2.update_traces(texttemplate='%{text:.0f}₺', textposition='outside',
-                             textfont_size=10)
-        fig_m2.update_layout(**CHART_LAYOUT,
-                             xaxis=dict(gridcolor='#2A2A2A', tickfont_size=10),
-                             yaxis=dict(tickfont_size=10))
+        fig_m2.update_traces(
+            texttemplate='%{text:,.0f} ₺',
+            textposition='outside',
+            cliponaxis=False,
+            textfont_size=10
+        )
+        fig_m2.update_layout(**BAR_LAYOUT)
         st.plotly_chart(fig_m2, use_container_width=True)
 
 # ===========================================================
@@ -461,10 +467,8 @@ with tab2:
 
     with st.form("sarj_form", clear_on_submit=True):
 
-        # TARİH
         tarih = st.date_input("📅 TARİH", value=datetime.today(), format="DD/MM/YYYY")
 
-        # SAATLER — mobilde 2 kolon
         c1, c2 = st.columns(2)
         with c1:
             bas_saat = st.time_input("🕐 BAŞLANGIÇ", value=time(8, 0), step=60)
@@ -487,12 +491,10 @@ with tab2:
 
         st.divider()
 
-        # ARAÇ KM
         arac_km = st.number_input("🚗 ARAÇ KM'Sİ", min_value=0.0, step=1.0, format="%.0f")
 
         st.divider()
 
-        # ENERJİ YÜZDELERİ
         st.markdown("**⚡ ENERJİ YÜZDELERİ**")
         bas_yuzde = st.slider("BAŞLANGIÇ (%)", 0, 100, 50, key="bas_y")
         bit_yuzde = st.slider("BİTİŞ (%)", 0, 100, 80, key="bit_y")
@@ -506,9 +508,7 @@ with tab2:
 
         st.divider()
 
-        # SARJ TİPİ & FİRMA
         sarj_tipi = st.selectbox("⚡ SARJ TİPİ", ['DC', 'AC', 'ACİL OSGB', 'HEDİYE'])
-
         sarj_firma = st.text_input("🏢 SARJ FİRMASI", placeholder="ZES, WAT, TRUGO...").upper()
 
         c1, c2 = st.columns(2)
@@ -520,24 +520,20 @@ with tab2:
 
         st.divider()
 
-        # FATURA kW
         faturada_kw = st.number_input("📄 FATURADA ALINAN kW", min_value=0.0, step=0.01, format="%.2f")
 
-        # ÜCRETLİ kW & TUTAR
         c1, c2 = st.columns(2)
         with c1:
             ucretli_kw = st.number_input("⚡ ÜCRETLİ kW", min_value=0.0, step=0.01, format="%.2f")
         with c2:
             ucretli_tutar = st.number_input("💰 ÜCRETLİ ₺", min_value=0.0, step=0.01, format="%.2f")
 
-        # OSGB kW & TUTAR
         c1, c2 = st.columns(2)
         with c1:
             osgb_kw = st.number_input("🏥 OSGB kW", min_value=0.0, step=0.01, format="%.2f")
         with c2:
             osgb_tutar = st.number_input("🏥 OSGB ₺", min_value=0.0, step=0.01, format="%.2f")
 
-        # HEDİYE kW & TUTAR
         c1, c2 = st.columns(2)
         with c1:
             hediye_kw = st.number_input("🎁 HEDİYE kW", min_value=0.0, step=0.01, format="%.2f")
@@ -546,7 +542,6 @@ with tab2:
 
         st.divider()
 
-        # LOKALİZASYON & MENZİL
         lokalizasyon = st.text_input("📍 LOKALİZASYON", placeholder="İZMİR, NOVADA...").upper()
 
         c1, c2 = st.columns(2)
@@ -557,11 +552,9 @@ with tab2:
 
         st.divider()
 
-        # AÇIKLAMA
         aciklama = st.text_area("📝 AÇIKLAMA", height=90,
                                 placeholder="İsteğe bağlı not...").upper()
 
-        # GERÇEK kW kutusu
         st.markdown(f"""
         <div style="background:{CARD2};border:1px solid {KAPAK};border-radius:12px;
                     padding:14px 16px;margin:12px 0;text-align:center;">
@@ -569,12 +562,11 @@ with tab2:
             GERÇEK ALINAN kW  (%{fark_yuzde} x 0.885)
           </div>
           <div style="font-size:28px;font-weight:800;color:{KAPAK};margin-top:4px;">
-            {gercek_kw:.2f} kWh
+            {gercek_kw:,.2f} kWh
           </div>
         </div>
         """, unsafe_allow_html=True)
 
-        # KAYDET
         submitted = st.form_submit_button("💾  KAYDET", use_container_width=True)
 
         if submitted:
