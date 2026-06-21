@@ -312,41 +312,71 @@ with tab1:
     else:
         stats = compute_stats(df)
 
+        def kart(label, value, icon="", accent=KAPAK):
+            return f"""
+            <div style="background:{CARD_BG};border:1px solid #2A2A2A;border-radius:16px;
+                        padding:14px 16px;margin-bottom:8px;
+                        border-left:3px solid {accent};">
+              <div style="font-size:10px;color:#888;font-weight:700;letter-spacing:1px;
+                          text-transform:uppercase;margin-bottom:6px;">{icon} {label}</div>
+              <div style="font-size:22px;font-weight:800;color:{accent};line-height:1.1;">{value}</div>
+            </div>"""
+
+        def kart_row(items):
+            cols_html = "".join(
+                f'<div style="flex:1;min-width:0;">{kart(l, v, i, a)}</div>'
+                for l, v, i, a in items
+            )
+            st.markdown(
+                f'<div style="display:flex;gap:8px;margin-bottom:0px;">{cols_html}</div>',
+                unsafe_allow_html=True
+            )
+
         st.markdown("### ⚡ GENEL")
-        c1, c2 = st.columns(2)
-        c1.metric("TOPLAM kW",      f"{stats['toplam_kw']:,.2f}")
-        c2.metric("TOPLAM TUTAR",   f"{stats['toplam_tutar']:,.2f} ₺")
-        c1, c2 = st.columns(2)
-        c1.metric("SON KM",         f"{stats['son_km']:,.0f} km")
-        c2.metric("km / ₺",         f"{stats['ort_km_tl']:,.3f}")
+        kart_row([
+            ("TOPLAM kW",    f"{stats['toplam_kw']:,.2f}",        "⚡", KAPAK),
+            ("TOPLAM TUTAR", f"{stats['toplam_tutar']:,.2f} ₺",   "💰", KAPAK_D),
+        ])
+        kart_row([
+            ("SON KM",  f"{stats['son_km']:,.0f} km",   "🚗", KAPAK),
+            ("km / ₺",  f"{stats['ort_km_tl']:,.3f}",   "📊", KAPAK_D),
+        ])
 
-        st.markdown("### 💳 kW DAGILIMI")
-        c1, c2 = st.columns(2)
-        c1.metric("ÜCRETLİ kW",    f"{stats['ucretli_kw']:,.2f}")
-        c2.metric("OSGB kW",        f"{stats['osgb_kw']:,.2f}")
-        c1, c2 = st.columns(2)
-        c1.metric("HEDİYE kW",     f"{stats['hediye_kw']:,.2f}")
-        c2.metric("DC kW",          f"{stats['dc_kw']:,.2f}")
-        c1, c2 = st.columns(2)
-        c1.metric("AC kW",          f"{stats['ac_kw']:,.2f}")
+        st.markdown("### 💳 kW DAĞILIMI")
+        kart_row([
+            ("ÜCRETLİ kW", f"{stats['ucretli_kw']:,.2f}", "💳", KAPAK),
+            ("OSGB kW",     f"{stats['osgb_kw']:,.2f}",    "🏥", KAPAK_D),
+        ])
+        kart_row([
+            ("HEDİYE kW", f"{stats['hediye_kw']:,.2f}", "🎁", KAPAK),
+            ("DC kW",      f"{stats['dc_kw']:,.2f}",      "⚡", KAPAK_D),
+        ])
+        kart_row([
+            ("AC kW", f"{stats['ac_kw']:,.2f}", "🔌", KAPAK),
+        ])
 
-        st.markdown("### 💰 TUTAR DAGILIMI")
-        c1, c2 = st.columns(2)
-        c1.metric("ÜCRETLİ ₺",     f"{stats['ucretli_tutar']:,.2f}")
-        c2.metric("OSGB ÖD.YOK ₺", f"{stats['osgb_tutar']:,.2f}")
-        c1, c2 = st.columns(2)
-        c1.metric("HEDİYE ₺",      f"{stats['hediye_tutar']:,.2f}")
-        c2.metric("DC TUTAR ₺",     f"{stats['dc_tutar']:,.2f}")
-        c1, c2 = st.columns(2)
-        c1.metric("AC TUTAR ₺",     f"{stats['ac_tutar']:,.2f}")
+        st.markdown("### 💰 TUTAR DAĞILIMI")
+        kart_row([
+            ("ÜCRETLİ ₺",    f"{stats['ucretli_tutar']:,.2f} ₺", "💳", KAPAK),
+            ("OSGB ÖD.YOK ₺", f"{stats['osgb_tutar']:,.2f} ₺",   "🏥", KAPAK_D),
+        ])
+        kart_row([
+            ("HEDİYE ₺",  f"{stats['hediye_tutar']:,.2f} ₺", "🎁", KAPAK),
+            ("DC TUTAR ₺", f"{stats['dc_tutar']:,.2f} ₺",     "⚡", KAPAK_D),
+        ])
+        kart_row([
+            ("AC TUTAR ₺", f"{stats['ac_tutar']:,.2f} ₺", "🔌", KAPAK),
+        ])
 
         st.markdown("### ⏱️ SARJ SÜRELERİ")
-        c1, c2 = st.columns(2)
-        c1.metric("ÜC. DC (dk)",    f"{int(stats['sure_ucretli_dc']):,}")
-        c2.metric("ÜC. AC (dk)",    f"{int(stats['sure_ucretli_ac']):,}")
-        c1, c2 = st.columns(2)
-        c1.metric("ÜCRETSİZ AC",   f"{int(stats['sure_ucretsiz_ac']):,} dk")
-        c2.metric("HEDİYE DC",      f"{int(stats['sure_hediye_dc']):,} dk")
+        kart_row([
+            ("ÜC. DC (dk)",  f"{int(stats['sure_ucretli_dc']):,}",  "⚡", KAPAK),
+            ("ÜC. AC (dk)",  f"{int(stats['sure_ucretli_ac']):,}",  "🔌", KAPAK_D),
+        ])
+        kart_row([
+            ("ÜCRETSİZ AC", f"{int(stats['sure_ucretsiz_ac']):,} dk", "🆓", KAPAK),
+            ("HEDİYE DC",   f"{int(stats['sure_hediye_dc']):,} dk",   "🎁", KAPAK_D),
+        ])
 
         st.divider()
 
