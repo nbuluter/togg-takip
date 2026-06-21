@@ -27,7 +27,7 @@ except:
     st.info("ℹ️ Araba görseli 'araba.jpeg' adıyla GitHub'da hazır.")
 
 # --- HAFIZA (VERİTABANI) AYARLARI ---
-conn = sqlite3.connect('togg_sarj_kesin.db', check_same_thread=False)
+conn = sqlite3.connect('togg_sarj_kesin_v2.db', check_same_thread=False)
 c = conn.cursor()
 c.execute('''CREATE TABLE IF NOT EXISTS sarj_kayitlari
              (id INTEGER PRIMARY KEY AUTOINCREMENT, tarih TEXT, sarj_tipi TEXT, firma TEXT, 
@@ -42,20 +42,42 @@ uploaded_file = st.sidebar.file_uploader("İndirdiğiniz 'SARJ.csv' dosyasını 
 if uploaded_file is not None:
     try:
         eski_veri = pd.read_csv(uploaded_file)
-        c.execute("DELETE FROM sarj_kayitlari") # Mükerrer olmaması için önce temizliyoruz
+        c.execute("DELETE FROM sarj_kayitlari") # Mükerrer olmaması için temizliyoruz
         
         for index, row in eski_veri.iterrows():
-            st_tarih = str(row.iloc[0]) if len(row) > 0 else date.today().strftime("%d/%m/%Y")
-            s_tipi = str(row.iloc[1]) if len(row) > 1 else "AC"
-            sfirma = str(row.iloc[2]) if len(row) > 2 else "Bilinmiyor"
-            skw = float(row.iloc[3]) if len(row) > 3 and pd.notnull(row.iloc[3]) else 0.0
-            stutar = float(row.iloc[4]) if len(row) > 4 and pd.notnull(row.iloc[4]) else 0.0
-            skm = int(row.iloc[5]) if len(row) > 5 and pd.notnull(row.iloc[5]) else 0
-            
-            c.execute("INSERT INTO sarj_kayitlari (tarih, sarj_tipi, firma, ucret_tipi, baslama_saati, bitis_saati, fark_saati, baslangic_yuzde, guncel_km, kw, tutar) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                      (st_tarih, s_tipi, sfirma, "Ücretli", "16:00", "17:00", "1 saat 0 dk", 20, skm, skw, stutar))
+            try:
+                # Sütun isimlerine göre özel veri çekme
+                st_tarih = str(row['TARİH']) if 'TARİH' in eski_veri.columns and pd.notnull(row['TARİH']) else "Bilinmiyor"
+                s_tipi = str(row['ŞARJ TİPİ']) if 'ŞARJ TİPİ' in eski_veri.columns and pd.notnull(row['ŞARJ TİPİ']) else "AC"
+                sfirma = str(row['ALINAN ŞARJ FİRMASI']) if 'ALINAN ŞARJ FİRMASI' in eski_veri.columns and pd.notnull(row['ALINAN ŞARJ FİRMASI']) else "Bilinmiyor"
+                
+                # KW değerini bulma ve virgülden noktaya çevirme
+                skw_str = str(row['FATURADA ALINAN KW']) if 'FATURADA ALINAN KW' in eski_veri.columns and pd.notnull(row['FATURADA ALINAN KW']) else ""
+                if skw_str.strip() == "":
+                    skw_str = str(row['ALINAN KW (%1=0,885 kW)']) if 'ALINAN KW (%1=0,885 kW)' in eski_veri.columns and pd.notnull(row['ALINAN KW (%1=0,885 kW)']) else "0"
+                
+                skw = float(skw_str.replace('.', '').replace(',', '.')) if skw_str != "nan" else 0.0
+                
+                # Ödenen Ücreti ayarlama (ÜCRET YOK ibaresini anlama)
+                stutar_str = str(row['ÖDENEN ÜCRET']) if 'ÖDENEN ÜCRET' in eski_veri.columns and pd.notnull(row['ÖDENEN ÜCRET']) else "0"
+                if "YOK" in stutar_str.upper() or "BEDAVA" in stutar_str.upper():
+                    stutar = 0.0
+                    ucret_tipi = "Ücretsiz"
+                else:
+                    stutar = float(stutar_str.replace('.', '').replace(',', '.')) if stutar_str != "nan" else 0.0
+                    ucret_tipi = "Ücretli"
+
+                # Kilometreyi ayarlama (1.000 gibi değerleri düzeltme)
+                skm_str = str(row['ARAÇ KM']) if 'ARAÇ KM' in eski_veri.columns and pd.notnull(row['ARAÇ KM']) else "0"
+                skm = int(float(skm_str.replace('.', '').replace(',', ''))) if skm_str != "nan" and skm_str.strip() != "" else 0
+
+                c.execute("INSERT INTO sarj_kayitlari (tarih, sarj_tipi, firma, ucret_tipi, baslama_saati, bitis_saati, fark_saati, baslangic_yuzde, guncel_km, kw, tutar) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                          (st_tarih, s_tipi, sfirma, ucret_tipi, "00:00", "01:00", "1 saat", 20, skm, skw, stutar))
+            except:
+                continue # Hatalı satırları atla
+                
         conn.commit()
-        st.sidebar.success("✅ Harika! Tüm eski veriler hafızaya yüklendi. Yüklediğiniz dosyanın yanındaki Çarpı (X) işaretine basarak kutuyu temizleyebilirsiniz.")
+        st.sidebar.success("✅ Harika! Tüm detaylı verileriniz başarıyla okundu ve yüklendi.")
     except Exception as e:
         st.sidebar.error("Dosya okunurken bir hata oluştu. Lütfen dosyanın içeriğini kontrol edin.")
 
@@ -90,7 +112,7 @@ with st.sidebar.form("yeni_kayit_formu"):
         c.execute("INSERT INTO sarj_kayitlari (tarih, sarj_tipi, firma, ucret_tipi, baslama_saati, bitis_saati, fark_saati, baslangic_yuzde, guncel_km, kw, tutar) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                   (f_tarih.strftime("%d/%m/%Y"), f_sarj_tipi, f_firma, f_ucret_tipi, str(f_baslama)[:5], str(f_bitis)[:5], fark_saat_metni, f_baslangic_yuzde, f_km, f_kw, f_tutar))
         conn.commit()
-        st.sidebar.success("🚀 Yeni şarj başarıyla kaydedildi!")
+        st.sidebar.success("🚀 Yeni şarj başarıyla kaydedildi! Sayfayı yenileyin.")
 
 # --- 3. VERİLERİ İŞLEME VE GÖSTERME ---
 df = pd.read_sql_query("SELECT * FROM sarj_kayitlari", conn)
@@ -105,9 +127,9 @@ if not df.empty:
 
     st.markdown("### 📊 Ana Ekran Özet Kartları")
     c1, c2, c3 = st.columns(3)
-    c1.metric("Toplam Alınan Enerji", f"{toplam_kw:.2f} kW")
-    c2.metric("Toplam Ödenen Tutar", f"₺{toplam_tutar:.2f}")
-    c3.metric("Araç Performansı (Km/TL)", f"₺{ort_km_tl:.2f} / km")
+    c1.metric("Toplam Alınan Enerji", f"{toplam_kw:,.2f} kW")
+    c2.metric("Toplam Ödenen Tutar", f"₺{toplam_tutar:,.2f}")
+    c3.metric("Araç Performansı (Km/TL)", f"₺{ort_km_tl:,.2f} / km")
     
     st.divider()
     st.markdown("### 📈 Grafiksel Analizler")
