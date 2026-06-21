@@ -91,6 +91,7 @@ st.markdown(f"""
     font-size: 16px !important;
     padding: 10px 12px !important;
     min-height: 48px !important;
+    text-transform: uppercase !important;
   }}
   .stSelectbox > div > div {{
     background-color: {CARD2} !important;
