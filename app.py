@@ -23,9 +23,9 @@ st.caption("35 CTT 500 | Kapadokya Togg T10X")
 
 # ARABA GÖRSELİ
 try:
-    st.image("araba.jpg", use_container_width=True)
+    st.image("araba.jpeg", use_container_width=True)
 except:
-    st.info("ℹ️ Araba görseli için: GitHub klasörünüze 'araba.jpg' adıyla bir fotoğraf yüklediğinizde burada belirecektir.")
+    st.info("ℹ️ Araba görseli için: GitHub klasörünüze 'araba.jpeg' adıyla bir fotoğraf yüklediğinizde burada belirecektir.")
 
 # --- HAFIZA (VERİTABANI) AYARLARI ---
 conn = sqlite3.connect('togg_sarj_yeni.db', check_same_thread=False)
