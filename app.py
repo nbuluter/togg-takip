@@ -507,61 +507,74 @@ with tab1:
 with tab2:
     st.markdown("### ➕ YENİ SARJ KAYDI")
 
+    # ── FORM DIŞI: Anlık hesaplanan alanlar ──────────────────
+    tarih = st.date_input("📅 TARİH", value=datetime.today(), format="DD/MM/YYYY")
+
+    st.markdown(f"<div style='font-size:12px;font-weight:700;color:{TEXT};letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;'>🕐 BAŞLANGIÇ SAATİ</div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        bas_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=8, key="bas_h",
+                                  format_func=lambda x: f"{x:02d}")
+    with c2:
+        bas_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bas_m",
+                                  format_func=lambda x: f"{x:02d}")
+
+    st.markdown(f"<div style='font-size:12px;font-weight:700;color:{TEXT};letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;'>🕑 BİTİŞ SAATİ</div>", unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        bit_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=9, key="bit_h",
+                                  format_func=lambda x: f"{x:02d}")
+    with c2:
+        bit_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bit_m",
+                                  format_func=lambda x: f"{x:02d}")
+
+    bas_saat = time(bas_saat_h, bas_saat_m)
+    bit_saat = time(bit_saat_h, bit_saat_m)
+    bas_dt = datetime.combine(tarih, bas_saat)
+    bit_dt = datetime.combine(tarih, bit_saat)
+    if bit_dt < bas_dt:
+        bit_dt += timedelta(days=1)
+    sure_dk = int((bit_dt - bas_dt).total_seconds() / 60)
+
+    st.markdown(f"""
+    <div style="background:{CARD2};border-left:3px solid {KAPAK};
+                border-radius:8px;padding:10px 14px;margin:4px 0 12px 0;
+                font-size:14px;font-weight:700;color:{KAPAK};">
+      ⏱️ SARJ SÜRESİ: {sure_dk} DAKİKA
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.divider()
+
+    st.markdown(f"<div style='font-size:12px;font-weight:700;color:{TEXT};letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;'>⚡ ENERJİ YÜZDELERİ</div>", unsafe_allow_html=True)
+    bas_yuzde = st.slider("BAŞLANGIÇ (%)", 0, 100, 50, key="bas_y")
+    bit_yuzde = st.slider("BİTİŞ (%)", 0, 100, 80, key="bit_y")
+    fark_yuzde = bit_yuzde - bas_yuzde
+    gercek_kw  = fark_yuzde * 0.885
+
+    c1, c2, c3 = st.columns(3)
+    c1.metric("BAŞLANGIÇ", f"%{bas_yuzde}")
+    c2.metric("BİTİŞ", f"%{bit_yuzde}")
+    c3.metric("FARK", f"%{fark_yuzde}")
+
+    st.markdown(f"""
+    <div style="background:{CARD2};border:1px solid {KAPAK};border-radius:12px;
+                padding:14px 16px;margin:8px 0;text-align:center;">
+      <div style="font-size:11px;color:#888;font-weight:700;letter-spacing:1px;">
+        GERÇEK ALINAN kW  (%{fark_yuzde} x 0.885)
+      </div>
+      <div style="font-size:28px;font-weight:800;color:{KAPAK};margin-top:4px;">
+        {gercek_kw:,.2f} kWh
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.divider()
+
+    # ── FORM: Kayıt alanları ─────────────────────────────────
     with st.form("sarj_form", clear_on_submit=True):
 
-        tarih = st.date_input("📅 TARİH", value=datetime.today(), format="DD/MM/YYYY")
-
-        st.markdown("🕐 **BAŞLANGIÇ SAATİ**")
-        c1, c2 = st.columns(2)
-        with c1:
-            bas_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=8, key="bas_h",
-                                      format_func=lambda x: f"{x:02d}")
-        with c2:
-            bas_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bas_m",
-                                      format_func=lambda x: f"{x:02d}")
-
-        st.markdown("🕑 **BİTİŞ SAATİ**")
-        c1, c2 = st.columns(2)
-        with c1:
-            bit_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=9, key="bit_h",
-                                      format_func=lambda x: f"{x:02d}")
-        with c2:
-            bit_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bit_m",
-                                      format_func=lambda x: f"{x:02d}")
-
-        bas_saat = time(bas_saat_h, bas_saat_m)
-        bit_saat = time(bit_saat_h, bit_saat_m)
-
-        bas_dt = datetime.combine(tarih, bas_saat)
-        bit_dt = datetime.combine(tarih, bit_saat)
-        if bit_dt < bas_dt:
-            bit_dt += timedelta(days=1)
-        sure_dk = int((bit_dt - bas_dt).total_seconds() / 60)
-
-        st.markdown(f"""
-        <div style="background:{CARD2};border-left:3px solid {KAPAK};
-                    border-radius:8px;padding:10px 14px;margin:4px 0 12px 0;
-                    font-size:14px;font-weight:700;color:{KAPAK};">
-          ⏱️ SARJ SÜRESİ: {sure_dk} DAKİKA
-        </div>
-        """, unsafe_allow_html=True)
-
-        st.divider()
-
         arac_km = st.number_input("🚗 ARAÇ KM'Sİ", min_value=0.0, step=1.0, format="%.0f")
-
-        st.divider()
-
-        st.markdown("**⚡ ENERJİ YÜZDELERİ**")
-        bas_yuzde = st.slider("BAŞLANGIÇ (%)", 0, 100, 50, key="bas_y")
-        bit_yuzde = st.slider("BİTİŞ (%)", 0, 100, 80, key="bit_y")
-        fark_yuzde = bit_yuzde - bas_yuzde
-        gercek_kw  = fark_yuzde * 0.885
-
-        c1, c2, c3 = st.columns(3)
-        c1.metric("BAŞLANGIÇ", f"%{bas_yuzde}")
-        c2.metric("BİTİŞ", f"%{bit_yuzde}")
-        c3.metric("FARK", f"%{fark_yuzde}")
 
         st.divider()
 
@@ -611,18 +624,6 @@ with tab2:
 
         aciklama = st.text_area("📝 AÇIKLAMA", height=90,
                                 placeholder="İsteğe bağlı not...").upper()
-
-        st.markdown(f"""
-        <div style="background:{CARD2};border:1px solid {KAPAK};border-radius:12px;
-                    padding:14px 16px;margin:12px 0;text-align:center;">
-          <div style="font-size:11px;color:#888;font-weight:700;letter-spacing:1px;">
-            GERÇEK ALINAN kW  (%{fark_yuzde} x 0.885)
-          </div>
-          <div style="font-size:28px;font-weight:800;color:{KAPAK};margin-top:4px;">
-            {gercek_kw:,.2f} kWh
-          </div>
-        </div>
-        """, unsafe_allow_html=True)
 
         submitted = st.form_submit_button("💾  KAYDET", use_container_width=True)
 
