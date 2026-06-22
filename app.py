@@ -516,7 +516,7 @@ with tab2:
         bas_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=8, key="bas_h",
                                   format_func=lambda x: f"{x:02d}")
     with c2:
-        bas_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bas_m",
+        bas_saat_m = st.selectbox("DAKİKA", list(range(0, 60)), index=0, key="bas_m",
                                   format_func=lambda x: f"{x:02d}")
 
     st.markdown(f"<div style='font-size:12px;font-weight:700;color:{TEXT};letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;'>🕑 BİTİŞ SAATİ</div>", unsafe_allow_html=True)
@@ -525,7 +525,7 @@ with tab2:
         bit_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=9, key="bit_h",
                                   format_func=lambda x: f"{x:02d}")
     with c2:
-        bit_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bit_m",
+        bit_saat_m = st.selectbox("DAKİKA", list(range(0, 60)), index=0, key="bit_m",
                                   format_func=lambda x: f"{x:02d}")
 
     bas_saat = time(bas_saat_h, bas_saat_m)
@@ -571,6 +571,53 @@ with tab2:
 
     st.divider()
 
+    # ── FORM DIŞI: kW fiyatı + kW miktarları (anlık tutar hesabı için) ──────
+    st.divider()
+    st.markdown(f"<div style='font-size:12px;font-weight:700;color:{TEXT};letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px;'>💲 kW FİYATI VE MİKTARLAR</div>", unsafe_allow_html=True)
+
+    kw_ucreti = st.number_input("💲 kW ÜCRETİ (₺)", min_value=0.0, step=0.01, format="%.2f", key="kw_ucreti_out")
+
+    c1, c2 = st.columns(2)
+    with c1:
+        ucretli_kw = st.number_input("⚡ ÜCRETLİ kW", min_value=0.0, step=0.01, format="%.2f", key="ucretli_kw_out")
+    with c2:
+        ucretli_tutar = round(kw_ucreti * ucretli_kw, 2)
+        st.markdown(f"""
+        <div style="background:{CARD2};border:1px solid {KAPAK};border-radius:10px;
+                    padding:10px 12px;margin-top:4px;">
+          <div style="font-size:10px;color:#888;font-weight:700;letter-spacing:1px;">💰 ÜCRETLİ ₺ (OTO)</div>
+          <div style="font-size:20px;font-weight:800;color:{KAPAK};margin-top:2px;">{ucretli_tutar:,.2f} ₺</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        osgb_kw = st.number_input("🏥 OSGB kW", min_value=0.0, step=0.01, format="%.2f", key="osgb_kw_out")
+    with c2:
+        osgb_tutar = round(kw_ucreti * osgb_kw, 2)
+        st.markdown(f"""
+        <div style="background:{CARD2};border:1px solid {KAPAK_D};border-radius:10px;
+                    padding:10px 12px;margin-top:4px;">
+          <div style="font-size:10px;color:#888;font-weight:700;letter-spacing:1px;">🏥 OSGB ₺ (OTO)</div>
+          <div style="font-size:20px;font-weight:800;color:{KAPAK_D};margin-top:2px;">{osgb_tutar:,.2f} ₺</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    c1, c2 = st.columns(2)
+    with c1:
+        hediye_kw = st.number_input("🎁 HEDİYE kW", min_value=0.0, step=0.01, format="%.2f", key="hediye_kw_out")
+    with c2:
+        hediye_tutar = round(kw_ucreti * hediye_kw, 2)
+        st.markdown(f"""
+        <div style="background:{CARD2};border:1px solid {KAPAK_D};border-radius:10px;
+                    padding:10px 12px;margin-top:4px;">
+          <div style="font-size:10px;color:#888;font-weight:700;letter-spacing:1px;">🎁 HEDİYE ₺ (OTO)</div>
+          <div style="font-size:20px;font-weight:800;color:{KAPAK_D};margin-top:2px;">{hediye_tutar:,.2f} ₺</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.divider()
+
     # ── FORM: Kayıt alanları ─────────────────────────────────
     with st.form("sarj_form", clear_on_submit=True):
 
@@ -581,34 +628,12 @@ with tab2:
         sarj_tipi = st.selectbox("⚡ SARJ TİPİ", ['DC', 'AC', 'ACİL OSGB', 'HEDİYE'])
         sarj_firma = st.text_input("🏢 SARJ FİRMASI", placeholder="ZES, WAT, TRUGO...").upper()
 
-        c1, c2 = st.columns(2)
-        with c1:
-            kw_ucreti = st.number_input("💲 kW ÜCRETİ (₺)", min_value=0.0, step=0.01, format="%.2f")
-        with c2:
-            ucret_tipi = st.selectbox("💳 ÜCRET TİPİ",
-                                      ['ÜCRETLİ', 'ÜCRETSİZ', 'İSKONTOLU ÜCRETLİ', 'HEDİYE'])
+        ucret_tipi = st.selectbox("💳 ÜCRET TİPİ",
+                                  ['ÜCRETLİ', 'ÜCRETSİZ', 'İSKONTOLU ÜCRETLİ', 'HEDİYE'])
 
         st.divider()
 
         faturada_kw = st.number_input("📄 FATURADA ALINAN kW", min_value=0.0, step=0.01, format="%.2f")
-
-        c1, c2 = st.columns(2)
-        with c1:
-            ucretli_kw = st.number_input("⚡ ÜCRETLİ kW", min_value=0.0, step=0.01, format="%.2f")
-        with c2:
-            ucretli_tutar = st.number_input("💰 ÜCRETLİ ₺", min_value=0.0, step=0.01, format="%.2f")
-
-        c1, c2 = st.columns(2)
-        with c1:
-            osgb_kw = st.number_input("🏥 OSGB kW", min_value=0.0, step=0.01, format="%.2f")
-        with c2:
-            osgb_tutar = st.number_input("🏥 OSGB ₺", min_value=0.0, step=0.01, format="%.2f")
-
-        c1, c2 = st.columns(2)
-        with c1:
-            hediye_kw = st.number_input("🎁 HEDİYE kW", min_value=0.0, step=0.01, format="%.2f")
-        with c2:
-            hediye_tutar = st.number_input("🎁 HEDİYE ₺", min_value=0.0, step=0.01, format="%.2f")
 
         st.divider()
 
@@ -743,8 +768,26 @@ with tab3:
                         st.rerun()
 
         st.divider()
-        st.dataframe(df_display, use_container_width=True, height=400)
+        st.markdown(f"<div style='font-size:11px;color:#888;margin-bottom:4px;'>✏️ Hücreye tıklayarak düzenleme yapabilirsiniz. Değişiklikler için <b style='color:{KAPAK}'>KAYDET</b> butonuna basın.</div>", unsafe_allow_html=True)
 
+        edited_df = st.data_editor(
+            df_display,
+            use_container_width=True,
+            height=400,
+            num_rows="fixed",
+            key="veri_editor"
+        )
+
+        if st.button("💾 DEĞİŞİKLİKLERİ KAYDET", use_container_width=True, key="editor_kaydet"):
+            df_full = load_data()
+            for col in edited_df.columns:
+                if col in df_full.columns:
+                    df_full.loc[edited_df.index, col] = edited_df[col].values
+            df_full.to_csv(DATA_FILE, sep=';', index=False, encoding='utf-8-sig')
+            st.success("✅ Değişiklikler kaydedildi!")
+            st.rerun()
+
+        st.divider()
         csv_bytes = df.to_csv(sep=';', index=False,
                               encoding='utf-8-sig').encode('utf-8-sig')
         st.download_button(
