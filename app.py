@@ -511,11 +511,26 @@ with tab2:
 
         tarih = st.date_input("📅 TARİH", value=datetime.today(), format="DD/MM/YYYY")
 
+        st.markdown("🕐 **BAŞLANGIÇ SAATİ**")
         c1, c2 = st.columns(2)
         with c1:
-            bas_saat = st.time_input("🕐 BAŞLANGIÇ", value=time(8, 0), step=60)
+            bas_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=8, key="bas_h",
+                                      format_func=lambda x: f"{x:02d}")
         with c2:
-            bit_saat = st.time_input("🕑 BİTİŞ", value=time(9, 0), step=60)
+            bas_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bas_m",
+                                      format_func=lambda x: f"{x:02d}")
+
+        st.markdown("🕑 **BİTİŞ SAATİ**")
+        c1, c2 = st.columns(2)
+        with c1:
+            bit_saat_h = st.selectbox("SAAT", list(range(0, 24)), index=9, key="bit_h",
+                                      format_func=lambda x: f"{x:02d}")
+        with c2:
+            bit_saat_m = st.selectbox("DAKİKA", list(range(0, 60, 5)), index=0, key="bit_m",
+                                      format_func=lambda x: f"{x:02d}")
+
+        bas_saat = time(bas_saat_h, bas_saat_m)
+        bit_saat = time(bit_saat_h, bit_saat_m)
 
         bas_dt = datetime.combine(tarih, bas_saat)
         bit_dt = datetime.combine(tarih, bit_saat)
