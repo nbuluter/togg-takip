@@ -679,8 +679,71 @@ with tab3:
             'ARAC KM', 'LOKALIZASYON', 'SARJ SURESI (DK)', 'ACIKLAMA'
         ]
         existing = [c for c in show_cols if c in df.columns]
-        st.dataframe(df[existing].reset_index(drop=True),
-                     use_container_width=True, height=450)
+        df_display = df[existing].reset_index(drop=True)
+
+        # Satır seçimi için numara listesi
+        satirlar = [
+            f"#{i}  |  {row.get('TARIH','?')}  |  {row.get('SARJ FIRMASI ADI','?')}  |  {row.get('SARJ TIPI','?')}"
+            for i, row in df_display.iterrows()
+        ]
+        secim = st.selectbox(
+            "🗂️ SİLMEK İSTEDİĞİNİZ SATIRI SEÇİN",
+            options=["— Seçiniz —"] + satirlar,
+            key="silme_secim"
+        )
+
+        # Seçili satırı önizle
+        if secim != "— Seçiniz —":
+            secili_idx = int(secim.split("|")[0].replace("#", "").strip())
+            st.markdown(f"""
+            <div style="background:{CARD2};border:1px solid #c0392b;border-radius:12px;
+                        padding:12px 16px;margin:8px 0;border-left:3px solid #c0392b;">
+              <div style="font-size:11px;color:#e74c3c;font-weight:700;letter-spacing:1px;margin-bottom:6px;">
+                ⚠️ SEÇİLEN KAYIT
+              </div>
+              <div style="font-size:13px;color:{TEXT};font-weight:600;">
+                {secim}
+              </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # session_state ile iki adımlı onay
+            if 'onay_bekle' not in st.session_state:
+                st.session_state['onay_bekle'] = False
+
+            if not st.session_state['onay_bekle']:
+                if st.button("🗑️ BU KAYDI SİL", use_container_width=True, key="sil_btn"):
+                    st.session_state['onay_bekle'] = True
+                    st.rerun()
+            else:
+                st.markdown(f"""
+                <div style="background:#1a0a0a;border:2px solid #c0392b;border-radius:12px;
+                            padding:14px 16px;margin:8px 0;text-align:center;">
+                  <div style="font-size:14px;font-weight:800;color:#e74c3c;margin-bottom:4px;">
+                    ⚠️ DİKKAT! BU İŞLEM GERİ ALINAMAZ!
+                  </div>
+                  <div style="font-size:12px;color:#aaa;">
+                    Seçili kaydı kalıcı olarak silmek istediğinizden emin misiniz?
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
+
+                c1, c2 = st.columns(2)
+                with c1:
+                    if st.button("✅ EVET, SİL", use_container_width=True, key="onay_evet"):
+                        df_full = load_data()
+                        df_full = df_full.drop(index=secili_idx).reset_index(drop=True)
+                        df_full.to_csv(DATA_FILE, sep=';', index=False, encoding='utf-8-sig')
+                        st.session_state['onay_bekle'] = False
+                        st.success("✅ Kayıt silindi!")
+                        st.rerun()
+                with c2:
+                    if st.button("❌ VAZGEÇ", use_container_width=True, key="onay_hayir"):
+                        st.session_state['onay_bekle'] = False
+                        st.rerun()
+
+        st.divider()
+        st.dataframe(df_display, use_container_width=True, height=400)
 
         csv_bytes = df.to_csv(sep=';', index=False,
                               encoding='utf-8-sig').encode('utf-8-sig')
