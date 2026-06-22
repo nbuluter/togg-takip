@@ -349,27 +349,27 @@ with tab1:
         st.markdown("### 💳 kW DAĞILIMI")
         kart_row([
             ("ÜCRETLİ kW", f"{stats['ucretli_kw']:,.2f}", "💳", KAPAK),
-            ("OSGB kW",     f"{stats['osgb_kw']:,.2f}",    "🏥", KAPAK_D),
         ])
         kart_row([
-            ("HEDİYE kW", f"{stats['hediye_kw']:,.2f}", "🎁", KAPAK),
-            ("DC kW",      f"{stats['dc_kw']:,.2f}",      "⚡", KAPAK_D),
+            ("DC kW", f"{stats['dc_kw']:,.2f}", "⚡", KAPAK),
+            ("AC kW", f"{stats['ac_kw']:,.2f}", "🔌", KAPAK_D),
         ])
         kart_row([
-            ("AC kW", f"{stats['ac_kw']:,.2f}", "🔌", KAPAK),
+            ("OSGB kW",   f"{stats['osgb_kw']:,.2f}",   "🏥", KAPAK),
+            ("HEDİYE kW", f"{stats['hediye_kw']:,.2f}", "🎁", KAPAK_D),
         ])
 
         st.markdown("### 💰 TUTAR DAĞILIMI")
         kart_row([
-            ("ÜCRETLİ ₺",    f"{stats['ucretli_tutar']:,.2f} ₺", "💳", KAPAK),
-            ("OSGB ÖD.YOK ₺", f"{stats['osgb_tutar']:,.2f} ₺",   "🏥", KAPAK_D),
+            ("ÜCRETLİ ₺", f"{stats['ucretli_tutar']:,.2f} ₺", "💳", KAPAK),
         ])
         kart_row([
-            ("HEDİYE ₺",  f"{stats['hediye_tutar']:,.2f} ₺", "🎁", KAPAK),
-            ("DC TUTAR ₺", f"{stats['dc_tutar']:,.2f} ₺",     "⚡", KAPAK_D),
+            ("DC TUTAR ₺", f"{stats['dc_tutar']:,.2f} ₺", "⚡", KAPAK),
+            ("AC TUTAR ₺", f"{stats['ac_tutar']:,.2f} ₺", "🔌", KAPAK_D),
         ])
         kart_row([
-            ("AC TUTAR ₺", f"{stats['ac_tutar']:,.2f} ₺", "🔌", KAPAK),
+            ("OSGB ÖD.YOK ₺", f"{stats['osgb_tutar']:,.2f} ₺",   "🏥", KAPAK),
+            ("HEDİYE ₺",      f"{stats['hediye_tutar']:,.2f} ₺",  "🎁", KAPAK_D),
         ])
 
         st.markdown("### ⏱️ SARJ SÜRELERİ")
@@ -400,35 +400,37 @@ with tab1:
             yaxis=dict(tickfont_size=10),
         )
 
-        st.markdown("### 🥧 kWh PASTA")
+        st.markdown("### 🥧 kW PASTA GRAFİK")
         lkw = ['ÜCRETLİ', 'OSGB', 'HEDİYE']
         vkw = [stats['ucretli_kw'], stats['osgb_kw'], stats['hediye_kw']]
         lkw2 = [l for l, v in zip(lkw, vkw) if v > 0]
         vkw2 = [v for v in vkw if v > 0]
-        fig_p1 = px.pie(values=vkw2, names=lkw2,
-                        color_discrete_sequence=PIE_COLORS, hole=0.4)
-        fig_p1.update_traces(
+        fig_p1 = go.Figure(go.Pie(
+            values=vkw2, labels=lkw2,
+            hole=0.4,
+            marker_colors=PIE_COLORS[:len(vkw2)],
             texttemplate='%{label}<br>%{value:,.2f}',
             textfont_size=11
-        )
+        ))
         fig_p1.update_layout(**CHART_LAYOUT)
         st.plotly_chart(fig_p1, use_container_width=True)
 
-        st.markdown("### 🥧 TUTAR PASTA")
+        st.markdown("### 🥧 TUTAR ₺ PASTA GRAFİK")
         lt = ['ÜCRETLİ', 'OSGB', 'HEDİYE']
         vt = [stats['ucretli_tutar'], stats['osgb_tutar'], stats['hediye_tutar']]
         lt2 = [l for l, v in zip(lt, vt) if v > 0]
         vt2 = [v for v in vt if v > 0]
-        fig_p2 = px.pie(values=vt2, names=lt2,
-                        color_discrete_sequence=PIE_COLORS, hole=0.4)
-        fig_p2.update_traces(
+        fig_p2 = go.Figure(go.Pie(
+            values=vt2, labels=lt2,
+            hole=0.4,
+            marker_colors=PIE_COLORS[:len(vt2)],
             texttemplate='%{label}<br>%{value:,.2f} ₺',
             textfont_size=11
-        )
+        ))
         fig_p2.update_layout(**CHART_LAYOUT)
         st.plotly_chart(fig_p2, use_container_width=True)
 
-        st.markdown("### 🏢 FİRMAYA GÖRE kWh")
+        st.markdown("### 🏢 ENERJİ FİRMALARI kW DAĞILIMI")
         df2 = df.copy()
         df2['TOPLAM_KW'] = (df2['UCRETLI ALINAN KW'].fillna(0)
                             + df2["ACIL OSGB'DEN ALINAN KW"].fillna(0)
@@ -447,7 +449,7 @@ with tab1:
         fig_b1.update_layout(**BAR_LAYOUT)
         st.plotly_chart(fig_b1, use_container_width=True)
 
-        st.markdown("### 🏢 FİRMAYA GÖRE TUTAR (₺)")
+        st.markdown("### 🏢 ENERJİ FİRMALARI TUTAR (₺) DAĞILIMI")
         df2['TOPLAM_TUTAR'] = (df2['UCRETLI ALIM TUTARI'].fillna(0)
                                + df2["ACIL OSGB'YE ODENMEYEN TUTAR"].fillna(0)
                                + df2['HEDIYE ALIM TUTARI'].fillna(0))
@@ -465,7 +467,7 @@ with tab1:
         fig_b2.update_layout(**BAR_LAYOUT)
         st.plotly_chart(fig_b2, use_container_width=True)
 
-        st.markdown("### 📅 AYLARA GÖRE kWh")
+        st.markdown("### 📅 AYLARA GÖRE ENERJİ TÜKETİMİ (kW)")
         df2['TARIH_DT'] = pd.to_datetime(df2['TARIH'], dayfirst=True, errors='coerce')
         df2['AY'] = df2['TARIH_DT'].dt.strftime('%Y-%m')
         aykw = (df2.dropna(subset=['AY'])
@@ -483,7 +485,7 @@ with tab1:
         fig_m1.update_layout(**BAR_LAYOUT)
         st.plotly_chart(fig_m1, use_container_width=True)
 
-        st.markdown("### 📅 AYLARA GÖRE TUTAR (₺)")
+        st.markdown("### 📅 AYLARA GÖRE ENERJİ HARCAMASI (₺)")
         ayt = (df2.dropna(subset=['AY'])
                .groupby('AY')['TOPLAM_TUTAR'].sum()
                .sort_index().reset_index())
