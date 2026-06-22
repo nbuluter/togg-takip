@@ -91,7 +91,6 @@ st.markdown(f"""
     font-size: 16px !important;
     padding: 10px 12px !important;
     min-height: 48px !important;
-    text-transform: uppercase !important;
   }}
   .stSelectbox > div > div {{
     background-color: {CARD2} !important;
@@ -261,7 +260,8 @@ def compute_stats(df):
         s['son_km'] = float(df['ARAC KM'].dropna().iloc[-1])
     except Exception:
         s['son_km'] = 0
-    s['ort_km_tl'] = s['son_km'] / s['toplam_tutar'] if s['toplam_tutar'] > 0 else 0
+    s['tl_per_km']     = s['toplam_tutar'] / s['son_km'] if s['son_km'] > 0 else 0
+    s['net_tl_per_km'] = s['ucretli_tutar'] / s['son_km'] if s['son_km'] > 0 else 0
     uc_dc = df[(df['SARJ TIPI'] == 'DC') & (df['UCRET TIPI'].isin(['UCRETLI', 'ISKONTOLU UCRETLI']))]
     uc_ac = df[(df['SARJ TIPI'] == 'AC') & (df['UCRET TIPI'].isin(['UCRETLI', 'ISKONTOLU UCRETLI']))]
     u_ac  = df[(df['SARJ TIPI'] == 'AC') & (df['UCRET TIPI'] == 'UCRETSIZ')]
@@ -339,8 +339,11 @@ with tab1:
             ("TOPLAM TUTAR", f"{stats['toplam_tutar']:,.2f} ₺",   "💰", KAPAK_D),
         ])
         kart_row([
-            ("SON KM",  f"{stats['son_km']:,.0f} km",   "🚗", KAPAK),
-            ("km / ₺",  f"{stats['ort_km_tl']:,.3f}",   "📊", KAPAK_D),
+            ("SON KM",    f"{stats['son_km']:,.0f} km",        "🚗", KAPAK),
+            ("₺ / KM",    f"{stats['tl_per_km']:,.3f} ₺",     "📊", KAPAK_D),
+        ])
+        kart_row([
+            ("NET ₺ / KM", f"{stats['net_tl_per_km']:,.3f} ₺", "💳", KAPAK),
         ])
 
         st.markdown("### 💳 kW DAĞILIMI")
